@@ -3,8 +3,10 @@
 RUNTIME_ENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNTIME_ENV_INFRA_ROOT="$(cd "${RUNTIME_ENV_DIR}/../.." && pwd)"
 RUNTIME_ENV_STELLCODEX_ROOT="${STELLCODEX_REPO_ROOT:-/srv/stellcodex}"
+RUNTIME_ENV_PRIMARY_FILE="${INFRA_RUNTIME_ENV_FILE:-${ENV_FILE:-/srv/infra/runtime/infra.deploy.env}}"
 
 RUNTIME_ENV_DEFAULT_ENV_FILES=(
+  "${RUNTIME_ENV_PRIMARY_FILE}"
   "${RUNTIME_ENV_INFRA_ROOT}/deploy/.env"
   "${RUNTIME_ENV_STELLCODEX_ROOT}/.env"
   "/srv/infra/deploy/.env"

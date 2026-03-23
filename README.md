@@ -24,4 +24,5 @@ The split compose file can also be resolved locally with environment overrides f
 
 - `deploy/.env` is runtime-only and must stay untracked.
 - Use `deploy/.env.example` as the canonical variable contract.
+- Preferred runtime env path: `/srv/infra/runtime/infra.deploy.env`
 - Materialize the real env file outside Git-tracked roots and pass it with `docker compose --env-file ...`.
