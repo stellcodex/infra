@@ -9,10 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: verify-required-roots
+      - name: verify-canonical-infra-layout
         run: |
           set -euo pipefail
-          for d in src docs deploy scripts tests; do
+          for d in deploy docs nginx ops scripts; do
             test -d "$d" || { echo "missing:$d"; exit 1; }
           done
-          echo "PASS boundary layout"
+          test -f deploy/docker-compose.yml || { echo "missing:deploy/docker-compose.yml"; exit 1; }
+          test -f nginx/stellcodex.conf || { echo "missing:nginx/stellcodex.conf"; exit 1; }
+          echo "PASS canonical infra boundary layout"
