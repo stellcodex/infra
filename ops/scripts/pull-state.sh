@@ -13,22 +13,14 @@ RESTORE_DB_CONTAINER="${DB_CONTAINER:-$(runtime_resolve_db_container 2>/dev/null
 
 echo "$LOG_PREFIX Pulling state from Drive..."
 
-# 1. Orchestra runtime state
-echo "$LOG_PREFIX Orchestra state..."
-mkdir -p "${STELLCODEX_REPO_ROOT}/ops/orchestra/state"
-rclone sync "${DRIVE_ROOT}/10_ORCHESTRA_JOBS/state/" \
-  "${STELLCODEX_REPO_ROOT}/ops/orchestra/state/" \
-  --exclude ".archive/**"
-echo "$LOG_PREFIX Orchestra state OK"
-
-# 2. Knowledge base
+# 1. Knowledge base
 echo "$LOG_PREFIX Knowledge base..."
 mkdir -p "${STELLCODEX_REPO_ROOT}/_knowledge"
 rclone sync "${DRIVE_ROOT}/08_STELL_AI_MEMORY/knowledge/" \
   "${STELLCODEX_REPO_ROOT}/_knowledge/"
 echo "$LOG_PREFIX Knowledge OK"
 
-# 3. Model backup restore (only if missing)
+# 2. Model backup restore (only if missing)
 MODEL_DIR="${STELLCODEX_REPO_ROOT}/_models"
 if [ ! -d "$MODEL_DIR" ] || [ -z "$(ls -A $MODEL_DIR 2>/dev/null)" ]; then
   echo "$LOG_PREFIX Pulling model backups..."
@@ -39,7 +31,7 @@ else
   echo "$LOG_PREFIX Models already present, skipping."
 fi
 
-# 4. Print available DB backups for manual restore
+# 3. Print available DB backups for manual restore
 echo
 echo "$LOG_PREFIX Available DB backups:"
 rclone lsf "${DRIVE_ROOT}/01_BACKUPS/db/" 2>/dev/null | tail -5 || echo "  (no backups found)"

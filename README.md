@@ -19,3 +19,9 @@ Canonical owner for deploy, nginx, firewall, cron/logrotate, backup/restore, and
 - infra repo: `/srv/infra`
 
 The split compose file can also be resolved locally with environment overrides for staging/proof work.
+
+## Secrets discipline
+
+- `deploy/.env` is runtime-only and must stay untracked.
+- Use `deploy/.env.example` as the canonical variable contract.
+- Materialize the real env file outside Git-tracked roots and pass it with `docker compose --env-file ...`.
