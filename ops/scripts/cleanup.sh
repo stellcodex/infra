@@ -99,7 +99,6 @@ sync_dir_to_drive "${WORKSPACE}/_backups" "01_BACKUPS/server/_backups"
 sync_dir_to_drive "${WORKSPACE}/backups" "01_BACKUPS/server/backups"
 sync_dir_to_drive "${WORKSPACE}/_reports" "04_REPORTS/server/_reports"
 sync_dir_to_drive "${WORKSPACE}/evidence" "03_EVIDENCE/server-runtime"
-sync_dir_to_drive "${WORKSPACE}/ops/orchestra/state" "10_ORCHESTRA_JOBS/state"
 
 # 2. CPU-only or rebuildable local directories.
 find "${WORKSPACE}" -maxdepth 2 -type d \
