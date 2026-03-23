@@ -3,3 +3,10 @@
 Ownership: deploy mechanics, backup/restore policy enforcement, runtime provisioning, ingress and environment hardening.
 
 No direct ownership of product/business logic or AI memory semantics.
+
+Canonical runtime roots:
+
+- `/srv/infra`
+- `/srv/stellcodex`
+- `/srv/stell-ai`
+- `/srv/orchestra`

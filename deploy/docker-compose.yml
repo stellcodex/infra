@@ -1,6 +1,84 @@
-version: "3.3"
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+psycopg2://stellcodex:${POSTGRES_PASSWORD}@postgres:5432/stellcodex
+  REDIS_URL: redis://redis:6379/0
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  JWT_ALG: ${JWT_ALG}
+  JWT_SECRET: ${JWT_SECRET}
+  REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS}
+  ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES}
+  RATE_LIMIT_PER_HOUR: ${RATE_LIMIT_PER_HOUR}
+  MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES}
+  FEATURE_FILES: ${FEATURE_FILES}
+  ALLOWED_CONTENT_TYPES: ${ALLOWED_CONTENT_TYPES}
+  CONVERSION_TIMEOUT_SECONDS: "1800"
+  BLENDER_TIMEOUT_SECONDS: "600"
+  SITE_URL: ${SITE_URL}
+  AUTH_SESSION_COOKIE_NAME: ${AUTH_SESSION_COOKIE_NAME}
+  AUTH_SESSION_TTL_MINUTES: ${AUTH_SESSION_TTL_MINUTES}
+  AUTH_SEED_ADMIN_EMAIL: ${AUTH_SEED_ADMIN_EMAIL}
+  AUTH_SEED_ADMIN_PASSWORD: ${AUTH_SEED_ADMIN_PASSWORD}
+  AUTH_SEED_ADMIN_FULL_NAME: ${AUTH_SEED_ADMIN_FULL_NAME}
+  AUTH_SEED_MEMBER_EMAIL: ${AUTH_SEED_MEMBER_EMAIL}
+  AUTH_SEED_MEMBER_PASSWORD: ${AUTH_SEED_MEMBER_PASSWORD}
+  AUTH_SEED_MEMBER_FULL_NAME: ${AUTH_SEED_MEMBER_FULL_NAME}
+  GOOGLE_ADMIN_WHITELIST: ${GOOGLE_ADMIN_WHITELIST}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+  GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+  STELLCODEX_S3_ENDPOINT_URL: http://minio:9000
+  STELLCODEX_S3_REGION: ${STELLCODEX_S3_REGION}
+  STELLCODEX_S3_BUCKET: ${STELLCODEX_S3_BUCKET}
+  STELLCODEX_S3_ACCESS_KEY_ID: ${STELLCODEX_S3_ACCESS_KEY_ID}
+  STELLCODEX_S3_SECRET_ACCESS_KEY: ${STELLCODEX_S3_SECRET_ACCESS_KEY}
+  PUBLIC_S3_BASE_URL: ${PUBLIC_S3_BASE_URL}
+  WORKDIR: /var/stellcodex/work
+  BOOTSTRAP_ADMIN_TOKEN: ${BOOTSTRAP_ADMIN_TOKEN}
+  STELL_AI_BASE_URL: http://stellai:7020
+  ORCHESTRA_BASE_URL: http://orchestra:7010
+  STELL_WEBHOOK_BASE_URL: http://172.27.0.1:4500
+  STELL_WEBHOOK_BRIDGE_HOST: ""
+  STELL_INTERNAL_CHAT_TRANSPORT: http_first
+  STELL_HTTP_BRIDGE_TIMEOUT: "3"
+
+x-stell-ai-env: &stell-ai-env
+  DATABASE_URL: postgresql+psycopg2://stellcodex:${POSTGRES_PASSWORD}@postgres:5432/stellcodex
+  BACKEND_INTERNAL_BASE_URL: http://backend:8000/api/v1/internal/runtime
+  BOOTSTRAP_ADMIN_TOKEN: ${BOOTSTRAP_ADMIN_TOKEN}
+
+x-orchestra-env: &orchestra-env
+  BACKEND_INTERNAL_BASE_URL: http://backend:8000/api/v1/internal/runtime
+  STELL_AI_BASE_URL: http://stellai:7020
+  BOOTSTRAP_ADMIN_TOKEN: ${BOOTSTRAP_ADMIN_TOKEN}
 
 services:
+  frontend:
+    build:
+      context: ${STELLCODEX_REPO_ROOT}
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api/v1
+    container_name: stellcodex-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: /api/v1
+      AUTH_SESSION_COOKIE_NAME: ${AUTH_SESSION_COOKIE_NAME}
+    ports:
+      - "127.0.0.1:3010:3010"
+    networks:
+      - stellcodex-net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3010/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
   postgres:
     image: postgres:15
     container_name: stellcodex-postgres
@@ -8,11 +86,11 @@ services:
     environment:
       POSTGRES_DB: stellcodex
       POSTGRES_USER: stellcodex
-      POSTGRES_PASSWORD: stellcodex
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5432:5432"
+    networks:
+      - stellcodex-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U stellcodex -d stellcodex"]
       interval: 5s
@@ -23,8 +101,8 @@ services:
     image: redis:7
     container_name: stellcodex-redis
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:6379:6379"
+    networks:
+      - stellcodex-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -35,7 +113,7 @@ services:
     image: minio/minio:RELEASE.2022-10-24T18-35-07Z
     container_name: stellcodex-minio
     restart: unless-stopped
-    command: server /data --console-address ":9001"
+    command: server /data
     environment:
       MINIO_ROOT_USER: ${STELLCODEX_S3_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${STELLCODEX_S3_SECRET_ACCESS_KEY}
@@ -43,7 +121,8 @@ services:
       - minio_data:/data
     ports:
       - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+    networks:
+      - stellcodex-net
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
       interval: 5s
@@ -52,7 +131,7 @@ services:
 
   backend:
     build:
-      context: /var/www/stellcodex/backend
+      context: ${STELLCODEX_REPO_ROOT}/backend
       dockerfile: Dockerfile.backend
     container_name: stellcodex-backend
     restart: unless-stopped
@@ -61,35 +140,16 @@ services:
     volumes:
       - /var/stellcodex/work:/var/stellcodex/work
     depends_on:
-      - postgres
-      - redis
-      - minio
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg2://stellcodex:stellcodex@postgres:5432/stellcodex
-      REDIS_URL: redis://redis:6379/0
-      JWT_ALG: HS256
-      JWT_SECRET: 1b6246485366c0222c4e50597030697f95b83be8d09fbbcdcc84ffac23a99f56
-      REFRESH_TOKEN_DAYS: "14"
-      ACCESS_TOKEN_MINUTES: "30"
-      RATE_LIMIT_PER_HOUR: "2000"
-      MAX_UPLOAD_BYTES: "209715200"
-      FEATURE_FILES: "true"
-      ALLOWED_CONTENT_TYPES: model/stl,model/step,model/iges,application/step,application/iges,application/pdf,image/png,image/jpeg,model/gltf-binary,model/gltf+json,application/octet-stream,text/plain
-      CONVERSION_TIMEOUT_SECONDS: "1800"
-      BLENDER_TIMEOUT_SECONDS: "600"
-
-      STELLCODEX_S3_ENDPOINT_URL: http://stellcodex-minio:9000
-      STELLCODEX_S3_REGION: us-east-1
-      STELLCODEX_S3_BUCKET: stellcodex
-      STELLCODEX_S3_ACCESS_KEY_ID: ${STELLCODEX_S3_ACCESS_KEY_ID}
-      STELLCODEX_S3_SECRET_ACCESS_KEY: ${STELLCODEX_S3_SECRET_ACCESS_KEY}
-      PUBLIC_S3_BASE_URL: https://stellcodex.com
-      WORKDIR: /var/stellcodex/work
-      ADMIN_TOKEN: a876a9832ea0ae153fa7872d3573c22fee9874cc4c5df8c1a7af065f5e1f7169
-      STELL_WEBHOOK_BASE_URL: http://172.27.0.1:4500
-      STELL_WEBHOOK_BRIDGE_HOST: ""
-      STELL_INTERNAL_CHAT_TRANSPORT: http_first
-      STELL_HTTP_BRIDGE_TIMEOUT: "3"
+      <<: *backend-env
+    networks:
+      - stellcodex-net
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health || exit 1"]
       interval: 5s
@@ -98,38 +158,72 @@ services:
 
   worker:
     build:
-      context: /var/www/stellcodex/backend
+      context: ${STELLCODEX_REPO_ROOT}/backend
       dockerfile: Dockerfile.worker
     container_name: stellcodex-worker
     restart: unless-stopped
     volumes:
       - /var/stellcodex/work:/var/stellcodex/work
     depends_on:
-      - redis
-      - postgres
-      - minio
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg2://stellcodex:stellcodex@postgres:5432/stellcodex
-      REDIS_URL: redis://redis:6379/0
-      JWT_ALG: HS256
-      JWT_SECRET: 1b6246485366c0222c4e50597030697f95b83be8d09fbbcdcc84ffac23a99f56
-      REFRESH_TOKEN_DAYS: "14"
-      ACCESS_TOKEN_MINUTES: "30"
-      RATE_LIMIT_PER_HOUR: "2000"
-      MAX_UPLOAD_BYTES: "209715200"
-      FEATURE_FILES: "true"
-      ALLOWED_CONTENT_TYPES: model/stl,model/step,model/iges,application/step,application/iges,application/pdf,image/png,image/jpeg,model/gltf-binary,model/gltf+json,application/octet-stream,text/plain
-      CONVERSION_TIMEOUT_SECONDS: "1800"
-      BLENDER_TIMEOUT_SECONDS: "600"
+      <<: *backend-env
+    networks:
+      - stellcodex-net
 
-      STELLCODEX_S3_ENDPOINT_URL: http://stellcodex-minio:9000
-      STELLCODEX_S3_REGION: us-east-1
-      STELLCODEX_S3_BUCKET: stellcodex
-      STELLCODEX_S3_ACCESS_KEY_ID: ${STELLCODEX_S3_ACCESS_KEY_ID}
-      STELLCODEX_S3_SECRET_ACCESS_KEY: ${STELLCODEX_S3_SECRET_ACCESS_KEY}
-      PUBLIC_S3_BASE_URL: https://stellcodex.com
-      WORKDIR: /var/stellcodex/work
+  stellai:
+    build:
+      context: ${STELLAI_REPO_ROOT}
+      dockerfile: Dockerfile
+    container_name: orchestra-stellai
+    restart: unless-stopped
+    environment:
+      <<: *stell-ai-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - stellcodex-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:7020/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  orchestra:
+    build:
+      context: ${ORCHESTRA_REPO_ROOT}
+      dockerfile: Dockerfile
+    container_name: orchestra-orchestrator
+    restart: unless-stopped
+    environment:
+      <<: *orchestra-env
+    depends_on:
+      backend:
+        condition: service_healthy
+      stellai:
+        condition: service_healthy
+    networks:
+      - stellcodex-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:7010/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
 
 volumes:
-  postgres_data: {}
-  minio_data: {}
+  postgres_data:
+    name: postgres_data
+  minio_data:
+    name: minio_data
+
+networks:
+  stellcodex-net:
+    name: stellcodex-net
