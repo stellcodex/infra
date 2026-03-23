@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRA_REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LOG_PREFIX="[deploy $(date '+%Y-%m-%d %H:%M:%S')]"
 COMPOSE_FILE="${COMPOSE_FILE:-${INFRA_REPO_ROOT}/deploy/docker-compose.yml}"
-ENV_FILE="${ENV_FILE:-${INFRA_REPO_ROOT}/deploy/.env}"
+ENV_FILE="${ENV_FILE:-${INFRA_RUNTIME_ENV_FILE:-/srv/infra/runtime/infra.deploy.env}}"
 
 echo "$LOG_PREFIX Deploy starting..."
 

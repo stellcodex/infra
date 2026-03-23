@@ -8,6 +8,7 @@ source "${INFRA_REPO_ROOT}/scripts/lib/runtime_env.sh"
 
 DRIVE_ROOT="${DRIVE_ROOT:-gdrive:STELL}"
 STELLCODEX_REPO_ROOT="${STELLCODEX_REPO_ROOT:-/srv/stellcodex}"
+INFRA_ENV_FILE="${INFRA_ENV_FILE:-${ENV_FILE:-${INFRA_RUNTIME_ENV_FILE:-/srv/infra/runtime/infra.deploy.env}}}"
 LOCAL_BACKUP_DIR="${LOCAL_BACKUP_DIR:-${STELLCODEX_REPO_ROOT}/backups}"
 TS="$(date +%Y%m%d_%H%M%S)"
 LOG_PREFIX="[backup-state $TS]"
@@ -47,6 +48,7 @@ mkdir -p "$CFG"
 # Sensitive env files.
 for f in \
   "${STELLCODEX_REPO_ROOT}/.env" \
+  "${INFRA_ENV_FILE}" \
   "${INFRA_REPO_ROOT}/deploy/.env"; do
   [ -f "$f" ] && cp "$f" "$CFG/$(echo $f | tr '/' '_').env" || true
 done
