@@ -1,28 +1,41 @@
-# STELLCODEX Infra
+# INFRA
 
-Canonical owner for deploy, nginx, firewall, cron/logrotate, backup/restore, and runtime hardening.
+Deployment and runtime infrastructure for STELLCODEX.
 
-## Canonical responsibility
+## Role in System
 
-- Docker/Compose topology
-- reverse proxy and edge alignment
-- firewall policy
-- deploy/rebuild/restore scripts
-- backup and cleanup jobs
-- release/smoke gates
+INFRA is responsible for deployment, networking, and operational stability across the STELLCODEX ecosystem.
 
-## Canonical runtime roots
+It manages:
+- Docker environments
+- service networking
+- reverse proxy alignment
+- production runtime consistency
+- deployment lifecycle
 
-- STELLCODEX repo: `/srv/stellcodex`
-- STELL.AI repo: `/srv/stell-ai`
-- ORCHESTRA repo: `/srv/orchestra`
-- infra repo: `/srv/infra`
+## System Position
 
-The split compose file can also be resolved locally with environment overrides for staging/proof work.
+- STELLCODEX → product/workflow surface  
+- STELL.AI → intelligence authority  
+- ORCHESTRA → execution authority  
+- INFRA → infrastructure authority  
 
-## Secrets discipline
+## Responsibility
 
-- `deploy/.env` is runtime-only and must stay untracked.
-- Use `deploy/.env.example` as the canonical variable contract.
-- Preferred runtime env path: `/srv/infra/runtime/infra.deploy.env`
-- Materialize the real env file outside Git-tracked roots and pass it with `docker compose --env-file ...`.
+- ensure services are reachable
+- maintain runtime consistency
+- manage deployment and rebuild flow
+- preserve clean infrastructure boundaries
+
+## Rules
+
+- no business logic
+- no intelligence logic
+- no workflow/state ownership
+
+## Related
+
+- `stellcodex/stellcodex`
+- `stellcodex/stell-ai`
+- `stellcodex/orchestra`
+- `stellcodex/stell-assistant`
