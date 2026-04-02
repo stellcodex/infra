@@ -1,0 +1,36 @@
+{
+  "system": "STELLCODEX",
+  "release_name": "github-closure-baseline",
+  "release_version": "v10-github-closure-1",
+  "release_date": "2026-04-02",
+  "repositories": {
+    "infra": {
+      "repo": "stellcodex/infra",
+      "branch": "main",
+      "role": "infrastructure-authority"
+    },
+    "stellcodex": {
+      "repo": "stellcodex/stellcodex",
+      "branch": "main",
+      "role": "product-api-authority"
+    },
+    "stell-ai": {
+      "repo": "stellcodex/stell-ai",
+      "branch": "main",
+      "role": "intelligence-authority"
+    },
+    "orchestra": {
+      "repo": "stellcodex/orchestra",
+      "branch": "main",
+      "role": "execution-authority"
+    }
+  },
+  "release_contract": {
+    "bootstrap_required": true,
+    "profiles_required": true,
+    "integration_gate_required": true,
+    "single_node_supported": true,
+    "multi_node_supported": true,
+    "scale_ready_profile_present": false
+  }
+}
