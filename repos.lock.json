@@ -1,0 +1,48 @@
+{
+  "system": "STELLCODEX",
+  "version": 1,
+  "workspace_layout": {
+    "root_required_children": [
+      "infra",
+      "stellcodex",
+      "stell-ai",
+      "orchestra"
+    ]
+  },
+  "repositories": [
+    {
+      "name": "infra",
+      "repo": "https://github.com/stellcodex/infra.git",
+      "default_branch": "main",
+      "required": true,
+      "role": "infrastructure-authority"
+    },
+    {
+      "name": "stellcodex",
+      "repo": "https://github.com/stellcodex/stellcodex.git",
+      "default_branch": "main",
+      "required": true,
+      "role": "product-api-authority"
+    },
+    {
+      "name": "stell-ai",
+      "repo": "https://github.com/stellcodex/stell-ai.git",
+      "default_branch": "main",
+      "required": true,
+      "role": "intelligence-authority"
+    },
+    {
+      "name": "orchestra",
+      "repo": "https://github.com/stellcodex/orchestra.git",
+      "default_branch": "main",
+      "required": true,
+      "role": "execution-authority"
+    }
+  ],
+  "profiles": [
+    "single-node",
+    "three-node",
+    "multi-node",
+    "scale-ready"
+  ]
+}
