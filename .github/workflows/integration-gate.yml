@@ -1,0 +1,30 @@
+name: infra-integration-gate
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  validate-infra-surface:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required files
+        run: |
+          test -f docker-compose.yml
+          test -f run.sh
+          test -f bootstrap.sh
+          test -f repos.lock.json
+          test -f deploy.sh
+
+      - name: Verify required profiles
+        run: |
+          test -f profiles/single-node.env
+          test -f profiles/three-node.env
+          test -f profiles/multi-node.env
+
+      - name: Docker compose syntax check
+        run: docker compose config > /tmp/compose.out
